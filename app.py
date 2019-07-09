@@ -6,9 +6,9 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import Column, Integer, String
 
 user = 'api_db_user'
-subname = 'server-10002' 
+subname = 'server-20075' 
 pwd = 'Interforaewg098!'
-sub = 'server-10002.postgres.database.azure.com'
+sub = 'server-20075.postgres.database.azure.com'
 db = 'api_db'
 
 app = Flask(__name__)
@@ -38,14 +38,13 @@ class ApiData(Base):
             'uuid2': self.uuid2,
             'uuid3': self.uuid3
         }
-
 def get_db_api_data() -> ApiData:
     api_data = db_session.query(ApiData)
     return api_data
 
 @app.route("/", methods=["GET"])
 def app_index():
-    return "Available methods are: get_api_data,  insert_api_data/(v1,v2,v3), insert_api_data_json, delete_api_data/(id), update_api_data/(id,v1,v2,v3)"
+    return "Available methods are: <br/> /get_api_data, <br/> /insert_api_data/(v1,v2,v3), <br/> /insert_api_data_json, <br/> /delete_api_data/(id), <br/> /update_api_data/(id,v1,v2,v3) <br/> /search_api_data/(id_or_uuid,v1) <br/><br/>WARNING: methods with multiple inputs are space sensitive."
 
 @app.route("/get_api_data", methods=["GET"])
 def get_api_data():
@@ -83,6 +82,31 @@ def update_api_data(rid, values1, values2, values3):
     row_id = ApiData.query.filter_by(id=rid).update(dict(uuid1=values1, uuid2=values2, uuid3=values3))
     db_session.commit()
     return 'Succesfully updated the row by id from the database table!'
+
+@app.route("/search_api_data/<id_uuid>,<val>")
+def search_api_data(id_uuid,val):
+    if id_uuid == 'id':
+        message = db_session.query(ApiData).filter(ApiData.id == val)
+        db_session.commit()
+    elif id_uuid == 'uuid1':
+        message = db_session.query(ApiData).filter(ApiData.uuid1 == val)
+        db_session.commit()
+    elif id_uuid == 'uuid2':
+        message = db_session.query(ApiData).filter(ApiData.uuid2 == val)
+        db_session.commit()
+    elif id_uuid == 'uuid3':
+        message = db_session.query(ApiData).filter(ApiData.uuid3 == val)
+        db_session.commit()
+    else:
+        result = "Bad Request"
+        db_session.commit()
+        return result
+                                                                                                                        
+    search_result_list = list(message)
+    if len(search_result_list) < 1:
+        return "Entry does not exist"
+    else:
+        return jsonify(json_list=[i.serialize for i in search_result_list])
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)

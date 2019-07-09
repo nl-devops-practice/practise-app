@@ -1,0 +1,42 @@
+variables:
+- group: Infrastructure-Variables-EPAM-1
+steps:
+- script: |
+   sudo apt-get -y update
+   sudo apt-get -y install git
+   sudo apt-get -y install az
+   sudo apt-get install -y postgresql postgresql-contrib
+
+   git clone https://github.com/Xangliev/Devops-epam-app.git
+   cd Devops-epam-app/deploy
+
+   az login --service-principal -u $(service-principal) --password $(service-password) --tenant $(tenantId)
+
+    # Create new database and user credentials
+    PGPASSWORD=$(admin-pass) psql -h $(db-url) -U $(admin-user)@$(server-name) --file='db.sql' postgres
+    # Connect to new database with user credentials and insert inital values
+    PGPASSWORD='Interforaewg098!' psql -h $(db-url) -U 'api_db_user'@$(server-name) -d 'api_db' --file='db1.sql'
+
+- task: Docker@2
+  displayName: BuildnPush
+  inputs:
+    # Azure Devops Connected Docker Hub Registry
+    containerRegistry: $(registry-name)
+    # Docker Hub Repository
+    repository: $(repository-name)
+    tags: $(tag-name)
+
+- task: AzureRmWebAppDeployment@4
+  displayName: 'Azure Web App Service Deploy'
+  inputs:
+  # Requires Service Connection with Azure Subscription
+    azureSubscription: $(subscription-id)
+    appType: webAppContainer
+    WebAppName: $(webapp-name)
+    DockerNamespace: index.docker.io
+    DockerRepository: $(repository-name)
+    DockerImageTag: $(tag-name)
+
+
+
+

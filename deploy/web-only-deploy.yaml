@@ -1,0 +1,26 @@
+variables:
+- group: Infrastructure-Variables-EPAM-2
+steps:
+- task: Docker@2
+  displayName: BuildnPush
+  inputs:
+    # Azure Devops Connected Docker Hub Registry
+    containerRegistry: $(registry-name)
+    # Docker Hub Repository
+    repository: $(repository-name)
+    tags: $(tag-name)
+
+- task: AzureRmWebAppDeployment@4
+  displayName: 'Azure Web App Service Deploy'
+  inputs:
+  # Requires Service Connection with Azure Subscription
+    azureSubscription: $(subscription-id)
+    appType: webAppContainer
+    WebAppName: $(webapp-name)
+    DockerNamespace: index.docker.io
+    DockerRepository: $(repository-name)
+    DockerImageTag: $(tag-name)
+
+
+
+
