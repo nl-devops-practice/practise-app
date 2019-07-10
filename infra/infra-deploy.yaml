@@ -1,0 +1,28 @@
+variables:
+- group: Infrastructure-Variables-EPAM-1
+steps:
+- script: |
+   sudo apt-get -y update
+   sudo apt-get -y install git
+   sudo apt-get -y install az
+
+   az login --service-principal -u $(service-principal) --password $(service-password) --tenant $(tenantId)
+
+   # Create a resource group
+   az group create --name $(resource-group) --location $(location)
+
+   # Create load balancing app service plan
+   az appservice plan create -n $(plan-name) -g $(resource-group) -l $(location) --is-linux --number-of-workers 2 --sku P1v2
+
+   # Create initial web app
+   az webapp create --name $(webapp-name) --resource-group $(resource-group) --plan $(plan-name) --runtime "Python|3.7"
+
+   # Create a logical server in the resource group
+   az postgres server create --name $(server-name) --resource-group $(resource-group) --location $(location) --admin-user $(admin-user) --admin-password $(admin-pass) --sku-name B_Gen5_1
+
+   # Configure a firewall rule for the server
+   az postgres server firewall-rule create --resource-group $(resource-group) --server-name $(server-name) --start-ip-address $(start-ip) --end-ip-address $(end-ip) --name allow-all-azure-ip
+   
+  displayName: 'Command Line Script'
+
+
