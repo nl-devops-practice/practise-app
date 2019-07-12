@@ -37,12 +37,10 @@ variable "server_name" {
   type = "string"
   default = "server-20075"
 }
-
 variable "admin_name" {
   type = "string"
   default = "Sqladmin"
 }
-
 variable "admin_pass" {
   type = "string"
   default = "ChangeYourAdminPassword1"
@@ -51,8 +49,15 @@ variable "start_ip" {
   type = "string"
   default = "0.0.0.0"
 }
-
 variable "end_ip" {
   type = "string"
   default = "0.0.0.0"
+}
+
+# Output Variables
+output "database_endpoint" {
+  value = "${var.server_name}.postgres.database.azure.com"
+}
+output "appservice_endpoint" {
+  value = "${var.web_name}.azurewebsites.net"
 }
