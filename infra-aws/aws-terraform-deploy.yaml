@@ -1,0 +1,22 @@
+variables:
+- group: Infrastructure-Variables-EPAM-3
+steps:
+- script: |
+   sudo apt-get -y update
+   sudo apt-get -y install git
+
+   # Download Terraform
+   wget https://releases.hashicorp.com/terraform/0.12.5/terraform_0.12.5_linux_amd64.zip
+   sudo unzip -o ./terraform_0.12.5_linux_amd64.zip -d /usr/local/bin/ 
+
+   git clone https://github.com/Xangliev/Devops-epam-app.git
+   cd Devops-epam-app/infra-aws
+
+   # Initalize Terraform with AWS creds and backend
+   terraform init -backend-config=$(acs_key) -backend-config=$(scr_key)
+   # Deploy terraform infrastructure
+   terraform apply -var $(acs_key) -var $(scr_key) -auto-approve
+
+
+
+

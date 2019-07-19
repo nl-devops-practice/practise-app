@@ -1,0 +1,23 @@
+variables:
+- group: Infrastructure-Variables-EPAM-2
+steps:
+# Build Image and push to registry
+- task: Docker@2
+  displayName: BuildnPush
+  inputs:
+    # Azure Devops Connected Docker Hub Registry
+    containerRegistry: $(registry-name)
+    # Docker Hub Repository
+    repository: $(repository-name)
+    tags: latest
+
+- task: Kubernetes@1
+  displayName: 'kubectl apply'
+  inputs:
+    connectionType: 'Azure Resource Manager'
+    azureSubscriptionEndpoint: $(subscription-endpoint)
+    azureResourceGroup: $(resource-group)
+    kubernetesCluster: $(kluster-name)
+    command: apply
+    arguments: '-f deploy/k8-attributes.yaml'
+

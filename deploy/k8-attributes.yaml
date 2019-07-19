@@ -1,0 +1,40 @@
+# Deploy app with 2 replicas
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  selector:
+    matchLabels:
+      app: flask
+      tier: frontend
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: flask
+        tier: frontend
+    spec:
+      containers:
+      - name: flask-web-api
+        image: brandonepam/friendlyreinier:latest
+        ports:
+        - containerPort: 5000
+---
+# Expose app to http requests and enable load balancing
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels:
+    app: flask
+    tier: frontend
+spec:
+  selector:
+    app: flask
+    tier: frontend
+  type: LoadBalancer
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 5000
