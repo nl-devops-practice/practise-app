@@ -46,10 +46,12 @@ def get_db_api_data() -> ApiData:
 def app_index():
     return "Available methods are: <br/> /get_api_data, <br/> /insert_api_data/(v1,v2,v3), <br/> /insert_api_data_json, <br/> /delete_api_data/(id), <br/> /update_api_data/(id,v1,v2,v3) <br/> /search_api_data/(id_or_uuid,v1) <br/><br/>WARNING: methods with multiple inputs are space sensitive."
 
-@app.route("/get_api_data", methods=["GET"])
+@app.route("/get_api_data")
 def get_api_data():
-    resp = jsonify(json_list=[i.serialize for i in get_db_api_data().all()])
-    resp.status_code = 300
+    retrieve = db_session.query(ApiData).order_by(ApiData.id)
+    db_session.commit()
+    search_result_list = list(retrieve)
+    resp = jsonify(json_list=[i.serialize for i in search_result_list])
     return resp
 
 @app.route("/insert_api_data/<values1>,<values2>,<values3>")
@@ -61,11 +63,16 @@ def insert_api_data(values1, values2, values3):
 
 @app.route("/delete_api_data/<val>")
 def delete_api_data(val):
-    ApiData.query.filter_by(id=val).delete()
-    db_session.commit()
-    return 'Succesfully deleted the row by id from the database table!'
+    init_retrieve = ApiData.query.filter_by(id=val)
+    search_result_list = list(init_retrieve)
+    if len(search_result_list) < 1:
+        return "Entry does not exist"
+    else:
+        ApiData.query.filter_by(id=val).delete()
+        db_session.commit()
+        return 'Succesfully deleted the row by id from the database table!'
 
-@app.route('/insert_api_data_json', methods=["GET", "POST"])
+@app.route('/insert_api_data_json')
 def add_message():
     insert = request.json
     insert_uuid1 = insert['uuid1']
