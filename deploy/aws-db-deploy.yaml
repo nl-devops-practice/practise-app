@@ -1,0 +1,23 @@
+variables:
+- group: Infrastructure-Variables-EPAM-3
+steps:
+- script: |
+   sudo apt-get -y update
+   pip install awscli
+   pip install awscli –upgrade
+   sudo apt-get -y install git
+   git clone https://github.com/Xangliev/Devops-epam-app.git
+   sudo apt-get install -y postgresql postgresql-contrib
+
+# Connect to AWS DB instance // Make sure the db instance is publicly accessible
+- task: AmazonWebServices.aws-vsts-tools.AWSShellScript.AWSShellScript@1
+  displayName: 'AWS Shell Script'
+  inputs:
+    regionName: $(region-name)
+    scriptType: inline
+    inlineScript: |
+      cd Devops-epam-app/deploy
+      # Create new database and user credentials and insert inital values
+      PGPASSWORD=$(admin-pass) psql -h $(db-url) --port=$(port) -U $(admin-user) -d $(server-name) --file='db.sql' 
+      # Connect to new database with user credentials and insert inital values
+      PGPASSWORD='Interforaewg098!' psql -h $(db-url) --port=$(port) -U 'api_db_user' -d 'api_db' --file='db1.sql'

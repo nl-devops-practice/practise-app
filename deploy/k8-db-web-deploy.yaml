@@ -1,0 +1,55 @@
+variables:
+- group: Infrastructure-Variables-EPAM-1
+steps:
+- script: |
+   sudo apt-get -y update
+   sudo apt-get -y install git
+   curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+   sudo apt-get install -y postgresql postgresql-contrib
+
+   git clone https://github.com/Xangliev/Devops-epam-app.git
+   cd Devops-epam-app/deploy
+
+   az login --service-principal -u $(service-principal) --password $(service-password) --tenant $(tenantId)
+
+    # Create new database and user credentials
+    PGPASSWORD=$(admin-pass) psql -h $(db-url) -U $(admin-user)@$(server-name) --file='db.sql' postgres
+    # Connect to new database with user credentials and insert inital values
+    PGPASSWORD='Interforaewg098!' psql -h $(db-url) -U 'api_db_user'@$(server-name) -d 'api_db' --file='db1.sql'
+
+    # Install Helm 
+    sudo apt install linuxbrew-wrapper -y
+    sudo snap install helm --classic
+
+    # Access AKS Cluster
+    az aks get-credentials -g $(resource-group) -n $(kluster-name)
+
+    # Install Prometheus & Grafana 
+    helm init --upgrade
+    helm repo add coreos https://s3-eu-west-1.amazonaws.com/coreos-charts/stable/
+    kubectl -n kube-system wait --for=condition=Ready pod -l name=tiller --timeout=300s
+    helm install coreos/prometheus-operator --name prometheus-operator --namespace monitoring
+    helm install coreos/kube-prometheus --name kube-prometheus --namespace monitoring
+    
+# Build Image and push to registry
+- task: Docker@2
+  displayName: BuildnPush
+  inputs:
+    # Azure Devops Connected Docker Hub Registry
+    containerRegistry: $(registry-name)
+    # Docker Hub Repository
+    repository: $(repository-name)
+    tags: latest
+
+# Deploy container to cluster
+- task: Kubernetes@1
+  displayName: 'kubectl apply'
+  inputs:
+    connectionType: 'Azure Resource Manager'
+    azureSubscriptionEndpoint: $(subscription-endpoint)
+    azureResourceGroup: $(resource-group)
+    kubernetesCluster: $(kluster-name)
+    command: apply
+    arguments: '-f deploy/k8-attributes.yaml'
+
+

@@ -1,0 +1,46 @@
+variables:
+- group: Infrastructure-Variables-EPAM-3
+steps:
+# Create a zip file from app for elastic beanstalk deployment
+- task: ArchiveFiles@2
+  displayName: 'Zip AWS Dockerfile'
+  inputs:
+    includeRootFolder: false
+    rootFolderOrFile: 'deploy/aws-app'
+    archiveFile: flaskapp.zip
+
+# Upload the zipfile to S3
+- task: S3Upload@1
+  displayName: 'S3 Upload: Bucket'
+  inputs:
+    awsCredentials: 'AWS-Connect'
+    regionName: $(region-name2)
+    bucketName: 'aws-flask-bucket-epam-12342073'
+    targetFolder: 'stage/flaskapp'
+    globExpressions: flaskapp.zip
+    createBucket: true
+
+# Deploy the zipfile to the App
+- task: BeanstalkDeployApplication@1
+  displayName: 'Deploy to Elastic Beanstalk'
+  inputs:
+    awsCredentials: 'AWS-Connect'
+    regionName: $(region-name2)
+    applicationName: $(webapp-name)
+    environmentName: $(env-name)
+    applicationType: s3
+    deploymentBundleBucket: 'aws-flask-bucket-epam-12342073'
+    deploymentBundleKey: 'stage/flaskapp/flaskapp.zip'
+    logRequest: true
+    logResponse: true
+
+# Build Image and push to registry
+- task: Docker@2
+  displayName: Build and Push Image
+  inputs:
+    # Azure Devops Connected Docker Hub Registry
+    containerRegistry: $(registry-name)
+    # Docker Hub Repository
+    repository: $(repository-name)
+    Dockerfile: 'deploy/aws-app/Dockerfile'
+    tags: aws

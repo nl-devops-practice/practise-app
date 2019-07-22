@@ -1,0 +1,26 @@
+variables:
+- group: Infrastructure-Variables-EPAM-4
+steps:
+- script: |
+
+    sudo apt-get -y update
+    sudo apt-get -y install git
+    sudo apt-get install -y postgresql postgresql-contrib
+
+    # Get google cloud sdk
+    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+    sudo apt-get update && sudo apt-get install google-cloud-sdk
+
+    # Config gcloud 
+    # set API for cloudresourcemanager beforehand and have the credentials file installed locally
+    gcloud auth activate-service-account --key-file= $(key-file)
+    gcloud config set project $(project-id)
+
+    git clone https://github.com/Xangliev/Devops-epam-app.git
+    cd Devops-epam-app/deploy
+
+    # Create new database and user credentials and insert inital values
+    PGPASSWORD= $(admin-pass) psql -h $(db-url) -U $(admin-user) -d $(server-name) --file='db.sql' 
+    # Connect to new database with user credentials and insert inital values
+    PGPASSWORD='Interforaewg098!' psql -h $(db-url) -U 'api_db_user' -d 'api_db' --file='db1.sql'
